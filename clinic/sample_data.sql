@@ -3,32 +3,37 @@
 
 USE fcpc_clinic;
 
--- Sample Students (Different Education Levels)
-INSERT INTO students (first_name, last_name, age, gender, phone, email, student_id, education_level, grade_level, course_track, address) VALUES
--- Elementary
-('Miguel', 'Santos', 8, 'Male', '09171234567', 'miguel.santos@fcpc.edu.ph', 'ELEM-2024-001', 'Elementary', 'Grade 3', 'General Education', '123 Magsaysay St., Angeles City'),
-('Sofia', 'Reyes', 11, 'Female', '09181234567', 'sofia.reyes@fcpc.edu.ph', 'ELEM-2024-015', 'Elementary', 'Grade 6', 'General Education', '456 Rizal Ave., Angeles City'),
+-- Sample Student (Different Education Levels)
+INSERT INTO Students 
+(first_name, last_name, class, age, gender, education_lvl, year_lvl, shs_strand, program, mobile_no, email, address_record) VALUES
 
--- Junior High
-('Carlos', 'Garcia', 13, 'Male', '09191234567', 'carlos.garcia@fcpc.edu.ph', 'JHS-2024-002', 'Junior High', 'Grade 8', 'General Education', '789 Mabini St., Angeles City'),
-('Anna', 'Cruz', 15, 'Female', '09201234567', 'anna.cruz@fcpc.edu.ph', 'JHS-2023-030', 'Junior High', 'Grade 10', 'General Education', '321 Bonifacio Rd., Angeles City'),
+-- K-10 Students
+('Arron', 'Santos', 'student', 6, 'Male', 'K-10', 'Kinder', NULL, NULL, '09171234567', 'sample@sample.com', '123 Sample St., Angeles City'),
+('Sofia', 'Reyes', 'student', 12, 'Female', 'K-10', 'Grade 6', NULL, NULL, '09181234567', 'sample@sample.com', '234 Example Ave., Angeles City'),
+('Carlos', 'Garcia', 'student', 14, 'Male', 'K-10', 'Grade 8', NULL, NULL, '09191234567', 'sample@sample.com', '345 Test Blvd., Angeles City'),
+('Anna', 'Cruz', 'student', 16, 'Female', 'K-10', 'Grade 10', NULL, NULL, '09201234567', 'sample@sample.com', '456 Demo Rd., Angeles City'),
 
--- Senior High
-('Juan', 'Dela Cruz', 17, 'Male', '09211234567', 'juan.delacruz@fcpc.edu.ph', 'SHS-2024-003', 'Senior High', 'Grade 11', 'STEM (Science, Technology, Engineering, Mathematics)', '654 Luna St., Angeles City'),
-('Maria', 'Mendoza', 18, 'Female', '09221234567', 'maria.mendoza@fcpc.edu.ph', 'SHS-2023-012', 'Senior High', 'Grade 12', 'ABM (Accountancy, Business, Management)', '111 Del Pilar St., Angeles City'),
+-- Senior High Students
+('Juan', 'Dela Cruz', 'student', 17, 'Male', 'Senior High', 'Grade 11', 'STEM', NULL, '09211234567', 'sample@sample.com', '567 Mock St., Angeles City'),
+('Lara', 'Gomez', 'student', 18, 'Female', 'Senior High', 'Grade 12', 'ABM', NULL, '09221234567', 'sample@sample.com', '678 Model St., Angeles City'),
 
--- College
-('Roberto', 'Torres', 20, 'Male', '09231234567', 'roberto.torres@fcpc.edu.ph', 'COL-2024-001', 'College', '2nd Year', 'BS Information Technology (BSIT)', '222 Aguinaldo Ave., Angeles City'),
-('Elena', 'Ramos', 21, 'Female', '09241234567', 'elena.ramos@fcpc.edu.ph', 'COL-2023-015', 'College', '3rd Year', 'BS Business Administration (BSBA)', '333 Quezon Blvd., Angeles City'),
-('Diego', 'Villanueva', 19, 'Male', '09251234567', 'diego.villanueva@fcpc.edu.ph', 'COL-2024-020', 'College', '1st Year', 'BS Nursing (BSN)', '444 Roxas St., Angeles City');
+-- College Students
+('Maria', 'Mendoza', 'student', 18, 'Female', 'College', '1st Year', NULL, 'BSIT', '09331234567', 'sample@sample.com', '789 Sample St., Angeles City'),
+('Karia', 'Mendoza', 'student', 19, 'Female', 'College', '2nd Year', NULL, 'BSBA', '09341234567', 'sample@sample.com', '890 Sample St., Angeles City'),
+('Daniel', 'Lopez', 'student', 20, 'Male', 'College', '3rd Year', NULL, 'BSCRIM', '09351234567', 'sample@sample.com', '901 Sample St., Angeles City'),
+('Rhea', 'Torres', 'student', 21, 'Female', 'College', '4th Year', NULL, 'BSED', '09361234567', 'sample@sample.com', '012 Sample St., Angeles City');
 
--- Sample Employees (Different Types)
-INSERT INTO employees (first_name, last_name, age, gender, phone, email, employee_id, employee_type, department, address) VALUES
-('Pedro', 'Aquino', 35, 'Male', '09261234567', 'pedro.aquino@fcpc.edu.ph', 'TEACH-2018-001', 'Teacher', 'Information Technology', '555 Macapagal Ave., Angeles City'),
-('Carmen', 'Santos', 42, 'Female', '09271234567', 'carmen.santos@fcpc.edu.ph', 'TEACH-2015-008', 'Teacher', 'Business Administration', '666 Osmeña St., Angeles City'),
-('Luis', 'Fernandez', 38, 'Male', '09281234567', 'luis.fernandez@fcpc.edu.ph', 'STAFF-2020-015', 'Staff', 'Library Services', '777 Quirino Ave., Angeles City'),
-('Gloria', 'Martinez', 45, 'Female', '09291234567', 'gloria.martinez@fcpc.edu.ph', 'ADMIN-2012-003', 'Administration', 'Human Resources', '888 Laurel Blvd., Angeles City'),
-('Antonio', 'Lopez', 52, 'Male', '09301234567', 'antonio.lopez@fcpc.edu.ph', 'STAFF-2010-005', 'Staff', 'Facilities Management', '999 Magsaysay Dr., Angeles City');
+INSERT INTO Employees 
+(first_name, last_name, age, gender, mobile_no, email, employee_type, department, address_record) VALUES
+
+('Pedro', 'Aquino', 35, 'Male', '09261234567', 'pedro.aquino@fcpc.edu.ph','Employee', 'Registrar', '555 Macapagal Ave., Angeles City'),
+('Carmen', 'Santos', 42, 'Female', '09271234567', 'carmen.santos@fcpc.edu.ph','Employee', 'Registrar', '666 Osmeña St., Angeles City'),
+('Luis', 'Fernandez', 38, 'Male', '09281234567', 'luis.fernandez@fcpc.edu.ph', 'Employee', 'Registrar', '777 Quirino Ave., Angeles City'),
+('Gloria', 'Martinez', 45, 'Female', '09291234567', 'gloria.martinez@fcpc.edu.ph', 'Employee', 'Registrar', '888 Laurel Blvd., Angeles City'),
+('Antonio', 'Lopez', 52, 'Male', '09301234567', 'antonio.lopez@fcpc.edu.ph', 'Employee', 'Registrar', '999 Magsaysay Dr., Angeles City'),
+('Marvin', 'Reyes', 29, 'Male', '09311234567', 'marvin.reyes@fcpc.edu.ph', 'Employee', 'ICT', '101 Tech Park Rd., Angeles City'),
+('Helen', 'Cruz', 47, 'Female', '09321234567', 'helen.cruz@fcpc.edu.ph', 'Employee', 'Registrar', '202 Records Ave., Angeles City'),
+('Ramon', 'Dizon', 33, 'Male', '09331234567', 'ramon.dizon@fcpc.edu.ph', 'Employee', 'Registrar', '303 Maintenance Rd., Angeles City');
 
 -- Sample Appointments for Today (using separate tables)
 INSERT INTO appointments (patient_type, patient_id, appointment_date, appointment_time, appointment_type, status, notes) VALUES

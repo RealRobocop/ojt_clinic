@@ -11,8 +11,8 @@ require_once 'includes/db.php';
 $stats = [];
 try {
     // Count students and employees separately then combine
-    $studentCount = $pdo->query("SELECT COUNT(*) as total FROM students WHERE is_deleted = 0")->fetch()['total'];
-    $employeeCount = $pdo->query("SELECT COUNT(*) as total FROM employees WHERE is_deleted = 0")->fetch()['total'];
+    $studentCount = $pdo->query("SELECT COUNT(*) as total FROM Students WHERE is_deleted = 0")->fetch()['total'];
+    $employeeCount = $pdo->query("SELECT COUNT(*) as total FROM Employees WHERE is_deleted = 0")->fetch()['total'];
     $stats['totalPatients'] = $studentCount + $employeeCount;
     
     $result = $pdo->query("SELECT COUNT(*) as total FROM appointments WHERE is_deleted = 0");

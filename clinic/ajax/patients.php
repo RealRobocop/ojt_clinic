@@ -52,82 +52,102 @@ function getPatients($pdo) {
     $search = $_POST['search'] ?? '';
     
     $patients = [];
-    
-    // Get students if requested
+
+    // =========================
+    // STUDENTS (TABLE: Students)
+    // =========================
     if ($type === '' || $type === 'Student') {
         $sql = "SELECT 
-                    'Student' as patient_type,
-                    id, first_name, last_name, age, gender, phone, email, 
-                    student_id, education_level, grade_level, course_track,
-                    NULL as employee_id, NULL as employee_type, NULL as department,
-                    date_added
-                FROM students 
+                    'Student' AS patient_type,
+                    Student_id AS id,
+                    first_name,
+                    last_name,
+                    age,
+                    gender,
+                    mobile_no AS phone,
+                    email,
+                    education_lvl AS education_level,
+                    year_lvl AS grade_level,
+                    COALESCE(program, shs_strand) AS course_track,
+                    NULL AS employee_type,
+                    NULL AS department
+                FROM Students
                 WHERE is_deleted = 0";
-        
+
         $params = [];
-        
+
         if (!empty($educationLevel)) {
-            $sql .= " AND education_level = :education_level";
+            $sql .= " AND education_lvl = :education_level";
             $params[':education_level'] = $educationLevel;
         }
-        
+
         if (!empty($deptTrack)) {
-            $sql .= " AND course_track = :course_track";
-            $params[':course_track'] = $deptTrack;
+            $sql .= " AND (program = :deptTrack OR shs_strand = :deptTrack)";
+            $params[':deptTrack'] = $deptTrack;
         }
-        
+
         if (!empty($search)) {
             $sql .= " AND (first_name LIKE :search OR last_name LIKE :search)";
             $params[':search'] = "%$search%";
         }
-        
+
         $sql .= " ORDER BY first_name ASC, last_name ASC";
-        
+
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $patients = array_merge($patients, $stmt->fetchAll());
     }
-    
-    // Get employees if requested
+
+    // =========================
+    // EMPLOYEES (TABLE: Employees)
+    // =========================
     if ($type === '' || $type === 'Employee') {
         $sql = "SELECT 
-                    'Employee' as patient_type,
-                    id, first_name, last_name, age, gender, phone, email,
-                    employee_id, employee_type, department,
-                    NULL as student_id, NULL as education_level, NULL as grade_level, NULL as course_track,
-                    date_added
-                FROM employees 
+                    'Employee' AS patient_type,
+                    employee_id AS id,
+                    first_name,
+                    last_name,
+                    age,
+                    gender,
+                    mobile_no AS phone,
+                    email,
+                    employee_type,
+                    department,
+                    NULL AS education_level,
+                    NULL AS grade_level,
+                    NULL AS course_track
+                FROM Employees
                 WHERE is_deleted = 0";
-        
+
         $params = [];
-        
+
         if (!empty($employeeType)) {
             $sql .= " AND employee_type = :employee_type";
             $params[':employee_type'] = $employeeType;
         }
-        
+
         if (!empty($deptTrack)) {
             $sql .= " AND department = :department";
             $params[':department'] = $deptTrack;
         }
-        
+
         if (!empty($search)) {
             $sql .= " AND (first_name LIKE :search OR last_name LIKE :search)";
             $params[':search'] = "%$search%";
         }
-        
+
         $sql .= " ORDER BY first_name ASC, last_name ASC";
-        
+
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $patients = array_merge($patients, $stmt->fetchAll());
     }
-    
-    // Sort combined results
+
+    // Sort combined results alphabetically
     usort($patients, function($a, $b) {
         return strcmp($a['first_name'], $b['first_name']);
     });
-    
+
     echo json_encode(['success' => true, 'patients' => $patients]);
 }
 
