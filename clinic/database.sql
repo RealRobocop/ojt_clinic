@@ -4,30 +4,26 @@
 CREATE DATABASE IF NOT EXISTS fcpc_clinic CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE fcpc_clinic;
 
--- Students Table
-CREATE TABLE IF NOT EXISTS students (
+-- medical_records Table
+CREATE TABLE IF NOT EXISTS  medical_records(
     id INT AUTO_INCREMENT PRIMARY KEY,
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    age INT,
-    gender ENUM('Male', 'Female', 'Other'),
-    phone VARCHAR(20),
-    email VARCHAR(100),
-    address TEXT,
-    student_id VARCHAR(50) UNIQUE,
-    education_level ENUM('Elementary', 'Junior High', 'Senior High', 'College') NOT NULL,
-    grade_level VARCHAR(50) NOT NULL,
-    course_track VARCHAR(100) NOT NULL,
-    date_added DATETIME DEFAULT CURRENT_TIMESTAMP,
-    last_updated DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    is_deleted TINYINT(1) DEFAULT 0,
-    INDEX idx_education_level (education_level),
-    INDEX idx_name (first_name, last_name),
-    INDEX idx_deleted (is_deleted)
+    record_date DATE NOT NULL,
+    record_time TIME NOT NULL,
+    bp VARCHAR(10),          -- e.g. 120/80
+    hr INT,                  -- heart rate
+    rr INT,                  -- respiratory rate
+    osat DECIMAL(5,2),       -- oxygen saturation (%)
+    temp DECIMAL(4,1),       -- temperature
+    height_record DECIMAL(5,2),     -- cm or inches
+    weight_record DECIMAL(5,2),     -- kg or lbs
+    bmi DECIMAL(4,1),
+    prior_visit TEXT,
+    present_visit TEXT,
+    intervention TEXT,
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Employees Table
-CREATE TABLE IF NOT EXISTS employees (
+CREATE TABLE IF NOT EXISTS  (
     id INT AUTO_INCREMENT PRIMARY KEY,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
