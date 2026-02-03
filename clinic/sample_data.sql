@@ -1,4 +1,4 @@
--- First City Providential College - Clinic Management System
+_-- First City Providential College - Clinic Management System
 -- Sample Data with Separate Tables
 
 USE fcpc_clinic;

@@ -41,10 +41,6 @@ try {
             updateAppointment($pdo);
             break;
         
-        case 'deleteAppointment':
-            deleteAppointment($pdo);
-            break;
-        
         case 'checkIn':
             checkIn($pdo);
             break;
@@ -308,19 +304,6 @@ function updateAppointment($pdo) {
 
     echo json_encode(['success' => $result]);
 }
-function deleteAppointment($pdo) {
-    $id = $_POST['id'] ?? 0;
-    
-    // Soft delete
-    $stmt = $pdo->prepare("UPDATE appointments SET is_deleted = 1 WHERE id = :id");
-    $result = $stmt->execute([':id' => $id]);
-    
-    if ($result) {
-        echo json_encode(['success' => true]);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to delete appointment']);
-    }
-}
 
 function checkIn($pdo) {
     $id = $_POST['id'] ?? 0;
@@ -336,25 +319,41 @@ function checkIn($pdo) {
 }
 
 function getNotifications($pdo) {
-    // Get students appointments
-    $sqlStudent = "SELECT a.*, CONCAT(s.first_name, ' ', s.last_name) as patient_name
-            FROM appointments a
-            JOIN students s ON a.patient_id = s.Student_id AND a.patient_type = 'Student'
-            WHERE a.status = 'pending' AND a.is_deleted = 0";
-    
-    // Get employee appointments  
-    $sqlEmployee = "SELECT a.*, CONCAT(e.first_name, ' ', e.last_name) as patient_name
-            FROM appointments a
-            JOIN employees e ON a.patient_id = e.employee_id AND a.patient_type = 'Employee'
-            WHERE a.status = 'pending' AND a.is_deleted = 0";
-    
-    $sql = "($sqlStudent) UNION ($sqlEmployee) 
+
+    // Students
+    $sqlStudent = "
+        SELECT a.*, CONCAT(s.first_name, ' ', s.last_name) AS patient_name
+        FROM appointments a
+        JOIN students s 
+            ON a.patient_id = s.Student_id 
+            AND a.patient_type = 'Student'
+        WHERE 
+            a.is_deleted = 0 
+            AND a.status IN ('pending', 'confirmed')
+    ";
+
+    // Employees
+    $sqlEmployee = "
+        SELECT a.*, CONCAT(e.first_name, ' ', e.last_name) AS patient_name
+        FROM appointments a
+        JOIN employees e 
+            ON a.patient_id = e.employee_id 
+            AND a.patient_type = 'Employee'
+        WHERE 
+            a.is_deleted = 0 
+            AND a.status IN ('pending', 'confirmed')
+    ";
+
+    // Combine results
+    $sql = "($sqlStudent) UNION ALL ($sqlEmployee)
             ORDER BY appointment_date ASC, appointment_time ASC
             LIMIT 10";
-    
+
     $stmt = $pdo->query($sql);
     $notifications = $stmt->fetchAll();
-    
-    echo json_encode(['success' => true, 'notifications' => $notifications]);
+
+    echo json_encode([
+        'success' => true,
+        'notifications' => $notifications
+    ]);
 }
-?>

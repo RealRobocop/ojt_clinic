@@ -1,9 +1,4 @@
 <?php
-/**
- * First City Providential College - Clinic Management System
- * Patients AJAX Handler - Separate Students & Employees Tables
- */
-
 require_once '../includes/db.php';
 
 header('Content-Type: application/json');
@@ -17,26 +12,11 @@ $action = $_POST['action'] ?? '';
 
 try {
     switch ($action) {
-        case 'getPatients':
-            getPatients($pdo);
-            break;
-        
-        case 'getPatient':
-            getPatient($pdo);
-            break;
-        
-        case 'addPatient':
-            addPatient($pdo);
-            break;
-        
-        case 'updatePatient':
-            updatePatient($pdo);
-            break;
-        
-        case 'deletePatient':
-            deletePatient($pdo);
-            break;
-        
+        case 'getPatients': getPatients($pdo); break;
+        case 'getPatient': getPatient($pdo); break;
+        case 'addPatient': addPatient($pdo); break;
+        case 'updatePatient': updatePatient($pdo); break;
+        case 'deletePatient': deletePatient($pdo); break;
         default:
             echo json_encode(['success' => false, 'message' => 'Invalid action']);
     }
@@ -44,18 +24,16 @@ try {
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 
+# ==========================
+# GET PATIENTS
+# ==========================
 function getPatients($pdo) {
     $type = $_POST['type'] ?? '';
-    $educationLevel = $_POST['educationLevel'] ?? '';
-    $employeeType = $_POST['employeeType'] ?? '';
-    $deptTrack = $_POST['deptTrack'] ?? '';
     $search = $_POST['search'] ?? '';
-    
+
     $patients = [];
 
-    // =========================
-    // STUDENTS (TABLE: Students)
-    // =========================
+    # STUDENTS
     if ($type === '' || $type === 'Student') {
         $sql = "SELECT 
                     'Student' AS patient_type,
@@ -64,43 +42,29 @@ function getPatients($pdo) {
                     last_name,
                     age,
                     gender,
-                    mobile_no AS phone,
+                    mobile_no,
                     email,
-                    education_lvl AS education_level,
-                    year_lvl AS grade_level,
-                    COALESCE(program, shs_strand) AS course_track,
-                    NULL AS employee_type,
-                    NULL AS department
+                    class,
+                    education_lvl,
+                    year_lvl,
+                    shs_strand,
+                    program
                 FROM Students
                 WHERE is_deleted = 0";
 
         $params = [];
-
-        if (!empty($educationLevel)) {
-            $sql .= " AND education_lvl = :education_level";
-            $params[':education_level'] = $educationLevel;
-        }
-
-        if (!empty($deptTrack)) {
-            $sql .= " AND (program = :deptTrack OR shs_strand = :deptTrack)";
-            $params[':deptTrack'] = $deptTrack;
-        }
 
         if (!empty($search)) {
             $sql .= " AND (first_name LIKE :search OR last_name LIKE :search)";
             $params[':search'] = "%$search%";
         }
 
-        $sql .= " ORDER BY first_name ASC, last_name ASC";
-
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $patients = array_merge($patients, $stmt->fetchAll());
     }
 
-    // =========================
-    // EMPLOYEES (TABLE: Employees)
-    // =========================
+    # EMPLOYEES
     if ($type === '' || $type === 'Employee') {
         $sql = "SELECT 
                     'Employee' AS patient_type,
@@ -109,245 +73,175 @@ function getPatients($pdo) {
                     last_name,
                     age,
                     gender,
-                    mobile_no AS phone,
+                    mobile_no,
                     email,
-                    employee_type,
-                    department,
-                    NULL AS education_level,
-                    NULL AS grade_level,
-                    NULL AS course_track
+                    class,
+                    department
                 FROM Employees
                 WHERE is_deleted = 0";
 
         $params = [];
-
-        if (!empty($employeeType)) {
-            $sql .= " AND employee_type = :employee_type";
-            $params[':employee_type'] = $employeeType;
-        }
-
-        if (!empty($deptTrack)) {
-            $sql .= " AND department = :department";
-            $params[':department'] = $deptTrack;
-        }
 
         if (!empty($search)) {
             $sql .= " AND (first_name LIKE :search OR last_name LIKE :search)";
             $params[':search'] = "%$search%";
         }
 
-        $sql .= " ORDER BY first_name ASC, last_name ASC";
-
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $patients = array_merge($patients, $stmt->fetchAll());
     }
 
-    // Sort combined results alphabetically
-    usort($patients, function($a, $b) {
-        return strcmp($a['first_name'], $b['first_name']);
-    });
+    usort($patients, fn($a, $b) => strcmp($a['first_name'], $b['first_name']));
 
     echo json_encode(['success' => true, 'patients' => $patients]);
 }
 
+# ==========================
+# GET SINGLE PATIENT
+# ==========================
 function getPatient($pdo) {
     $id = $_POST['id'] ?? 0;
     $type = $_POST['type'] ?? '';
-    
+
     if ($type === 'Student') {
-        $stmt = $pdo->prepare("SELECT 'Student' as patient_type, s.* FROM students s WHERE s.id = :id AND s.is_deleted = 0");
+        $stmt = $pdo->prepare("SELECT *, 'Student' AS patient_type FROM Students WHERE Student_id = :id AND is_deleted = 0");
     } else {
-        $stmt = $pdo->prepare("SELECT 'Employee' as patient_type, e.* FROM employees e WHERE e.id = :id AND e.is_deleted = 0");
+        $stmt = $pdo->prepare("SELECT *, 'Employee' AS patient_type FROM Employees WHERE employee_id = :id AND is_deleted = 0");
     }
-    
+
     $stmt->execute([':id' => $id]);
     $patient = $stmt->fetch();
-    
-    if ($patient) {
-        echo json_encode(['success' => true, 'patient' => $patient]);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Patient not found']);
-    }
+
+    echo json_encode(['success' => (bool)$patient, 'patient' => $patient]);
 }
 
+# ==========================
+# ADD PATIENT
+# ==========================
 function addPatient($pdo) {
-    $patientType = $_POST['patientType'] ?? '';
-    
-    if (empty($patientType)) {
-        echo json_encode(['success' => false, 'message' => 'Patient type is required']);
-        return;
-    }
-    
-    try {
-        if ($patientType === 'Student') {
-            $data = [
-                ':first_name' => $_POST['firstName'] ?? '',
-                ':last_name' => $_POST['lastName'] ?? '',
-                ':age' => $_POST['age'] ?? null,
-                ':gender' => $_POST['gender'] ?? '',
-                ':phone' => $_POST['phone'] ?? null,
-                ':email' => $_POST['email'] ?? null,
-                ':address' => $_POST['address'] ?? null,
-                ':student_id' => $_POST['studentId'] ?? null,
-                ':education_level' => $_POST['educationLevel'] ?? '',
-                ':grade_level' => $_POST['gradeLevel'] ?? '',
-                ':course_track' => $_POST['courseTrack'] ?? ''
-            ];
-            
-            // Validate required fields
-            if (empty($data[':first_name']) || empty($data[':last_name']) || 
-                empty($data[':education_level']) || empty($data[':grade_level']) || empty($data[':course_track'])) {
-                echo json_encode(['success' => false, 'message' => 'All required student fields must be filled']);
-                return;
-            }
-            
-            $sql = "INSERT INTO students (
-                first_name, last_name, age, gender, phone, email, address,
-                student_id, education_level, grade_level, course_track
-            ) VALUES (
-                :first_name, :last_name, :age, :gender, :phone, :email, :address,
-                :student_id, :education_level, :grade_level, :course_track
-            )";
-            
-        } else { // Employee
-            $data = [
-                ':first_name' => $_POST['firstName'] ?? '',
-                ':last_name' => $_POST['lastName'] ?? '',
-                ':age' => $_POST['age'] ?? null,
-                ':gender' => $_POST['gender'] ?? '',
-                ':phone' => $_POST['phone'] ?? null,
-                ':email' => $_POST['email'] ?? null,
-                ':address' => $_POST['address'] ?? null,
-                ':employee_id' => $_POST['employeeId'] ?? null,
-                ':employee_type' => $_POST['employeeType'] ?? '',
-                ':department' => $_POST['department'] ?? ''
-            ];
-            
-            // Validate required fields
-            if (empty($data[':first_name']) || empty($data[':last_name']) || 
-                empty($data[':employee_type']) || empty($data[':department'])) {
-                echo json_encode(['success' => false, 'message' => 'All required employee fields must be filled (first name, last name, employee type, department)']);
-                return;
-            }
-            
-            $sql = "INSERT INTO employees (
-                first_name, last_name, age, gender, phone, email, address,
-                employee_id, employee_type, department
-            ) VALUES (
-                :first_name, :last_name, :age, :gender, :phone, :email, :address,
-                :employee_id, :employee_type, :department
-            )";
-        }
-        
-        $stmt = $pdo->prepare($sql);
-        $result = $stmt->execute($data);
-        
-        if ($result) {
-            echo json_encode(['success' => true, 'id' => $pdo->lastInsertId(), 'type' => $patientType]);
-        } else {
-            $errorInfo = $stmt->errorInfo();
-            echo json_encode(['success' => false, 'message' => 'Database error: ' . $errorInfo[2]]);
-        }
-    } catch (PDOException $e) {
-        echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
-    }
-}
+    $type = $_POST['patientType'] ?? '';
 
-function updatePatient($pdo) {
-    $id = $_POST['patientId'] ?? 0;
-    $patientType = $_POST['patientType'] ?? '';
-    
-    if ($patientType === 'Student') {
-        $data = [
-            ':id' => $id,
-            ':first_name' => $_POST['firstName'] ?? '',
-            ':last_name' => $_POST['lastName'] ?? '',
-            ':age' => $_POST['age'] ?? null,
-            ':gender' => $_POST['gender'] ?? '',
-            ':phone' => $_POST['phone'] ?? null,
-            ':email' => $_POST['email'] ?? null,
-            ':address' => $_POST['address'] ?? null,
-            ':student_id' => $_POST['studentId'] ?? null,
-            ':education_level' => $_POST['educationLevel'] ?? '',
-            ':grade_level' => $_POST['gradeLevel'] ?? '',
-            ':course_track' => $_POST['courseTrack'] ?? ''
-        ];
-        
-        $sql = "UPDATE students SET
-            first_name = :first_name,
-            last_name = :last_name,
-            age = :age,
-            gender = :gender,
-            phone = :phone,
-            email = :email,
-            address_record = :address,
-            student_id = :student_id,
-            education_level = :education_level,
-            grade_level = :grade_level,
-            course_track = :course_track
-        WHERE id = :id AND is_deleted = 0";
-        
-    } else { // Employee
-        $data = [
-            ':id' => $id,
-            ':first_name' => $_POST['firstName'] ?? '',
-            ':last_name' => $_POST['lastName'] ?? '',
-            ':age' => $_POST['age'] ?? null,
-            ':gender' => $_POST['gender'] ?? '',
-            ':phone' => $_POST['phone'] ?? null,
-            ':email' => $_POST['email'] ?? null,
-            ':address' => $_POST['address'] ?? null,
-            ':employee_id' => $_POST['employeeId'] ?? null,
-            ':employee_type' => $_POST['employeeType'] ?? '',
-            ':department' => $_POST['department'] ?? ''
-        ];
-        
-        $sql = "UPDATE employees SET
-            first_name = :first_name,
-            last_name = :last_name,
-            age = :age,
-            gender = :gender,
-            phone = :phone,
-            email = :email,
-            address_record = :address,
-            employee_id = :employee_id,
-            employee_type = :employee_type,
-            department = :department
-        WHERE id = :id AND is_deleted = 0";
-    }
-    
-    $stmt = $pdo->prepare($sql);
-    $result = $stmt->execute($data);
-    
-    if ($result) {
-        echo json_encode(['success' => true]);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to update patient']);
-    }
-}
-
-function deletePatient($pdo) {
-    $id = $_POST['id'] ?? 0;
-    $type = $_POST['type'] ?? '';
-    
-    // Soft delete
     if ($type === 'Student') {
-        $stmt = $pdo->prepare("UPDATE students SET is_deleted = 1 WHERE id = :id");
+        $sql = "INSERT INTO Students 
+            (first_name, last_name, age, gender, mobile_no, email, class, education_lvl, year_lvl, shs_strand, program, address_record)
+            VALUES 
+            (:first_name, :last_name, :age, :gender, :mobile_no, :email, :class, :education_lvl, :year_lvl, :shs_strand, :program, :address)";
+
+        $data = [
+            ':first_name' => $_POST['firstName'],
+            ':last_name' => $_POST['lastName'],
+            ':age' => $_POST['age'],
+            ':gender' => $_POST['gender'],
+            ':mobile_no' => $_POST['phone'],
+            ':email' => $_POST['email'],
+            ':class' => $_POST['class'],
+            ':education_lvl' => $_POST['educationLevel'],
+            ':year_lvl' => $_POST['gradeLevel'],
+            ':shs_strand' => $_POST['strand'] ?? null,
+            ':program' => $_POST['program'] ?? null,
+            ':address' => $_POST['address']
+        ];
     } else {
-        $stmt = $pdo->prepare("UPDATE employees SET is_deleted = 1 WHERE id = :id");
+        $sql = "INSERT INTO Employees
+            (first_name, last_name, age, gender, mobile_no, email, class, department, address_record)
+            VALUES
+            (:first_name, :last_name, :age, :gender, :mobile_no, :email, :class, :department, :address)";
+
+        $data = [
+            ':first_name' => $_POST['firstName'],
+            ':last_name' => $_POST['lastName'],
+            ':age' => $_POST['age'],
+            ':gender' => $_POST['gender'],
+            ':mobile_no' => $_POST['phone'],
+            ':email' => $_POST['email'],
+            ':class' => $_POST['class'],
+            ':department' => $_POST['department'],
+            ':address' => $_POST['address']
+        ];
     }
-    
-    $result = $stmt->execute([':id' => $id]);
-    
-    if ($result) {
-        // Also soft delete associated appointments
-        $stmt = $pdo->prepare("UPDATE appointments SET is_deleted = 1 WHERE patient_type = :type AND patient_id = :id");
-        $stmt->execute([':type' => $type, ':id' => $id]);
-        
-        echo json_encode(['success' => true]);
+
+    $stmt = $pdo->prepare($sql);
+    $success = $stmt->execute($data);
+
+    echo json_encode(['success' => $success]);
+}
+
+# ==========================
+# UPDATE PATIENT
+# ==========================
+function updatePatient($pdo) {
+    $id = $_POST['patientId'];
+    $type = $_POST['patientType'];
+
+    if ($type === 'Student') {
+        $sql = "UPDATE Students SET 
+            first_name = :first_name,
+            last_name = :last_name,
+            age = :age,
+            gender = :gender,
+            mobile_no = :mobile_no,
+            email = :email,
+            class = :class,
+            education_lvl = :education_lvl,
+            year_lvl = :year_lvl,
+            shs_strand = :shs_strand,
+            program = :program,
+            address_record = :address
+            WHERE Student_id = :id";
     } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to delete patient']);
+        $sql = "UPDATE Employees SET
+            first_name = :first_name,
+            last_name = :last_name,
+            age = :age,
+            gender = :gender,
+            mobile_no = :mobile_no,
+            email = :email,
+            class = :class,
+            department = :department,
+            address_record = :address
+            WHERE employee_id = :id";
     }
+
+    $data = [
+        ':id' => $id,
+        ':first_name' => $_POST['firstName'],
+        ':last_name' => $_POST['lastName'],
+        ':age' => $_POST['age'],
+        ':gender' => $_POST['gender'],
+        ':mobile_no' => $_POST['phone'],
+        ':email' => $_POST['email'],
+        ':class' => $_POST['class'],
+        ':education_lvl' => $_POST['educationLevel'] ?? null,
+        ':year_lvl' => $_POST['gradeLevel'] ?? null,
+        ':shs_strand' => $_POST['strand'] ?? null,
+        ':program' => $_POST['program'] ?? null,
+        ':department' => $_POST['department'] ?? null,
+        ':address' => $_POST['address']
+    ];
+
+    $stmt = $pdo->prepare($sql);
+    echo json_encode(['success' => $stmt->execute($data)]);
+}
+
+# ==========================
+# DELETE PATIENT
+# ==========================
+function deletePatient($pdo) {
+    $id = $_POST['id'];
+    $type = $_POST['type'];
+
+    if ($type === 'Student') {
+        $stmt = $pdo->prepare("UPDATE Students SET is_deleted = 1 WHERE Student_id = :id");
+    } else {
+        $stmt = $pdo->prepare("UPDATE Employees SET is_deleted = 1 WHERE employee_id = :id");
+    }
+
+    $stmt->execute([':id' => $id]);
+
+    $stmt = $pdo->prepare("UPDATE appointments SET is_deleted = 1 WHERE patient_id = :id AND patient_type = :type");
+    $stmt->execute([':id' => $id, ':type' => $type]);
+
+    echo json_encode(['success' => true]);
 }
 ?>

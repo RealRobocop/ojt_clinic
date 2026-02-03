@@ -79,6 +79,13 @@ try {
                     </svg>
                     <span>Appointments</span>
                 </button>
+                <button class="nav-item" data-section="medical_records" onclick="navigateTo('medical_records')">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="6" y="4" width="12" height="16"></rect>
+                        <line x1="9" y1="8" x2="15" y2="8"></line>
+                    </svg>
+                    <span>Medical Records</span>
+                </button>
             </nav>
         </aside>
 
@@ -260,18 +267,10 @@ try {
                 <section class="section" id="patients">
                     <div class="page-header">
                         <div>
-                            <h1>Patients</h1>
+                            <h1>Patients Records</h1>
                             <p>Manage patient records</p>
                         </div>
-                        <button class="btn btn-primary" onclick="openAddPatientModal()">
-                            <svg style="width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
-                            <span>Add Patient</span>
-                        </button>
                     </div>
-
                     <div class="card">
                         <div class="card-header">
                             <h2>Patient Records</h2>
@@ -312,7 +311,6 @@ try {
                                             <th>Age</th>
                                             <th>Contact</th>
                                             <th>Level/Department</th>
-                                            <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="patientsList">
@@ -369,194 +367,46 @@ try {
                         </div>
                     </div>
                 </section>
+                <!-- MEDICAL RECORD SECTION -->
+                <section class="section" id="medical_records">
+                    <div class="page-header">
+                        <div>
+                            <h1>Medical Records</h1>
+                            <p>Manage patient medical records</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Medical Records</h2>
+                            <div class="filter-controls">
+                                <input type="text" id="medicalRecordsSearch" placeholder="Search by patient name..." onkeyup="filterMedicalRecords()" class="search-input">
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-wrapper">
+                                <table id="tendRecordsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Patient Name</th>
+                                            <th>Date</th>
+                                            <th>Diagnosis</th>
+                                            <th>Treatment</th>
+                                            <th>Prescriptions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tendRecordsList">
+                                        <!-- Loaded via AJAX -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
         </main>
     </div>
 
     <!-- MODALS -->
-
-    <!-- Add/Edit Patient Modal -->
-    <div class="modal" id="patientModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="patientModalTitle">Add New Patient</h2>
-                <button class="modal-close" onclick="closePatientModal()">&times;</button>
-            </div>
-            <form id="patientForm">
-                <input type="hidden" id="patientId" name="patientId">
-                <div class="form-group">
-                    <label for="patientType">Patient Type *</label>
-                    <select id="patientType" name="patientType" required onchange="togglePatientFields()">
-                        <option value="">Select Type</option>
-                        <option value="Student">Student</option>
-                        <option value="Employee">Employee</option>
-                    </select>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="firstName">First Name *</label>
-                        <input type="text" id="firstName" name="firstName" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="lastName">Last Name *</label>
-                        <input type="text" id="lastName" name="lastName" required>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="patientAge">Age *</label>
-                        <input type="number" id="patientAge" name="age" min="0" max="150" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="patientGender">Gender *</label>
-                        <select id="patientGender" name="gender" required>
-                            <option value="">Select Gender</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="patientPhone">Phone</label>
-                        <input type="tel" id="patientPhone" name="phone">
-                    </div>
-                    <div class="form-group">
-                        <label for="patientEmail">Email</label>
-                        <input type="email" id="patientEmail" name="email">
-                    </div>
-                </div>
-                
-                <!-- Student Fields -->
-                <div id="studentFields" style="display: none;">
-                    <div class="form-group">
-                        <label for="studentId">Student ID *</label>
-                        <input type="text" id="studentId" name="studentId">
-                    </div>
-                    <div class="form-group">
-                        <label for="educationLevel">Education Level *</label>
-                        <select id="educationLevel" name="educationLevel" onchange="updateGradeLevelOptions()">
-                            <option value="">Select Level</option>
-                            <option value="Elementary">Elementary</option>
-                            <option value="Junior High">Junior High</option>
-                            <option value="Senior High">Senior High</option>
-                            <option value="College">College</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="gradeLevel">Grade Level *</label>
-                        <select id="gradeLevel" name="gradeLevel">
-                            <option value="">Select Grade/Year</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="courseTrack">Course/Track *</label>
-                        <select id="courseTrack" name="courseTrack">
-                            <option value="">Select Course/Track</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <!-- Employee Fields -->
-                <div id="employeeFields" style="display: none;">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="employeeId">Employee ID *</label>
-                            <input type="text" id="employeeId" name="employeeId">
-                        </div>
-                        <div class="form-group">
-                            <label for="employeeType">Employee Type *</label>
-                            <select id="employeeType" name="employeeType">
-                                <option value="">Select Type</option>
-                                <option value="Teacher">Teacher</option>
-                                <option value="Staff">Staff</option>
-                                <option value="Administration">Administration</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="department">Department *</label>
-                        <!-- 
-                        ==========================================
-                        EMPLOYEE DEPARTMENTS - EDIT HERE TO ADD MORE
-                        ==========================================
-                        To add more departments:
-                        1. Add new <option value="Department Name">Department Name</option>
-                        2. Keep alphabetical order for easy management
-                        3. Use clear, descriptive names
-                        ==========================================
-                        -->
-                        <select id="department" name="department">
-                            <option value="">Select Department</option>
-                            
-                            <!-- Academic Departments -->
-                            <optgroup label="Academic Departments">
-                                <option value="Arts and Sciences">Arts and Sciences</option>
-                                <option value="Business Administration">Business Administration</option>
-                                <option value="Computer Science">Computer Science</option>
-                                <option value="Education">Education</option>
-                                <option value="Engineering">Engineering</option>
-                                <option value="English Department">English Department</option>
-                                <option value="Filipino Department">Filipino Department</option>
-                                <option value="Hospitality Management">Hospitality Management</option>
-                                <option value="Information Technology">Information Technology</option>
-                                <option value="Mathematics Department">Mathematics Department</option>
-                                <option value="Nursing">Nursing</option>
-                                <option value="Science Department">Science Department</option>
-                                <option value="Social Studies Department">Social Studies Department</option>
-                                <option value="Tourism Management">Tourism Management</option>
-                            </optgroup>
-                            
-                            <!-- Administrative Departments -->
-                            <optgroup label="Administrative Departments">
-                                <option value="Accounting Office">Accounting Office</option>
-                                <option value="Admissions Office">Admissions Office</option>
-                                <option value="Cashier Office">Cashier Office</option>
-                                <option value="Clinic/Health Services">Clinic/Health Services</option>
-                                <option value="Guidance Office">Guidance Office</option>
-                                <option value="Human Resources">Human Resources</option>
-                                <option value="Library Services">Library Services</option>
-                                <option value="Office of the President">Office of the President</option>
-                                <option value="Office of the Registrar">Office of the Registrar</option>
-                                <option value="Public Relations">Public Relations</option>
-                                <option value="Scholarship Office">Scholarship Office</option>
-                                <option value="Student Affairs">Student Affairs</option>
-                            </optgroup>
-                            
-                            <!-- Support Services -->
-                            <optgroup label="Support Services">
-                                <option value="Facilities Management">Facilities Management</option>
-                                <option value="Grounds and Maintenance">Grounds and Maintenance</option>
-                                <option value="ICT/IT Department">ICT/IT Department</option>
-                                <option value="Janitorial Services">Janitorial Services</option>
-                                <option value="Security Office">Security Office</option>
-                            </optgroup>
-                            
-                            <!-- Special Offices -->
-                            <optgroup label="Special Offices">
-                                <option value="Athletic Department">Athletic Department</option>
-                                <option value="Cultural Affairs">Cultural Affairs</option>
-                                <option value="Research and Development">Research and Development</option>
-                                <option value="NSTP Office">NSTP Office</option>
-                                <option value="Quality Assurance">Quality Assurance</option>
-                            </optgroup>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="patientAddress">Address</label>
-                    <input type="text" id="patientAddress" name="address">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closePatientModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Patient</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- Add/Edit Appointment Modal -->
     <div class="modal" id="appointmentModal">
         <div class="modal-content">

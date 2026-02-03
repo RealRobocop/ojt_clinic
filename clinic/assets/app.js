@@ -368,6 +368,9 @@ function navigateTo(sectionId) {
     if (sectionId === 'appointments') {
         loadAppointments();
     }
+    if (sectionId === 'medical_records') {
+        loadMedicalRecords();
+    }
 }
 // ========================================
 // DASHBOARD - TODAY'S & TOMORROW'S APPOINTMENTS
@@ -566,16 +569,6 @@ function renderPatients(patients) {
             <td>${patient.age || 'N/A'}</td>
             <td>${patient.phone || 'N/A'}</td>
             <td>${levelInfo}</td>
-            <td>
-                <div class="action-buttons">
-                    <button class="btn btn-sm btn-secondary" onclick="editPatient(${patient.id}, '${patient.patient_type}')">
-                        Edit
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="confirmDeletePatient(${patient.id}, '${patient.first_name} ${patient.last_name}', '${patient.patient_type}')">
-                        Delete
-                    </button>
-                </div>
-            </td>
         </tr>
         `;
     }).join('');
@@ -727,9 +720,6 @@ function renderAppointments(appointments) {
                 <button class="btn btn-sm btn-secondary" onclick="editAppointment(${apt.id})">
                     Edit
                 </button>
-                <button class="btn btn-sm btn-danger" onclick="confirmDeleteAppointment(${apt.id}, '${apt.patient_name}')">
-                    Delete
-                </button>
             </div>
         </div>
     `).join('');
@@ -761,34 +751,45 @@ function editAppointment(id) {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
+    .then(res => res.json())
     .then(data => {
         if (!data.success) {
-            alert('Appointment not found');
+            showAlert('Failed to load appointment', 'danger');
             return;
         }
 
         const apt = data.appointment;
 
-        document.getElementById('appointmentModalTitle').textContent = 'Edit Appointment';
+        // Load patients first before assigning selected patient
+        loadPatientOptions();
+
+        // Fill modal fields
+        document.getElementById('appointmentModalTitle').innerText = 'Edit Appointment';
         document.getElementById('appointmentId').value = apt.id;
-        document.getElementById('appointmentPatientType').value = apt.patient_type;
-
-        // Load patients first, then assign selected patient
-        loadAppointmentPatients(() => {
-            document.getElementById('appointmentPatient').value = apt.patient_id;
-        });
-
         document.getElementById('appointmentDate').value = apt.appointment_date;
         document.getElementById('appointmentTime').value = apt.appointment_time;
         document.getElementById('appointmentType').value = apt.appointment_type;
         document.getElementById('appointmentStatus').value = apt.status;
         document.getElementById('appointmentNotes').value = apt.notes || '';
 
-        document.getElementById('appointmentModal').classList.add('active');
+        // Delay select assignment so options exist
+        setTimeout(() => {
+            document.getElementById('appointmentPatient').value = apt.patient_id;
+            document.getElementById('appointmentPatientType').value = apt.patient_type;
+        }, 200);
+
+        openAppointmentModal();
     })
-    .catch(error => console.error('Error:', error));
+    .catch(err => {
+        console.error(err);
+        showAlert('Error loading appointment', 'danger');
+    });
 }
+function openAppointmentModal() {
+    document.getElementById('appointmentModal').classList.add('active');
+}
+
+
 
 function confirmDeleteAppointment(id, patientName) {
     deleteType = 'appointment';
@@ -908,6 +909,49 @@ function goToAppointment(appointmentId) {
             }
         });
     }, 300);
+}
+// ========================================
+// MEDICAL RECORDS
+// ========================================
+function loadMedicalRecords() {
+    const search = document.getElementById('tendSearch')?.value || '';
+
+    const formData = new FormData();
+    formData.append('action', 'getMedicalRecords');
+    formData.append('search', search);
+
+    fetch('./ajax/tend.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            renderMedicalRecords(data.records);
+        }
+    })
+    .catch(err => console.error(err));
+}
+function renderMedicalRecords(records) {
+    const container = document.getElementById('tendRecordsList');
+
+    if (!records || records.length === 0) {
+        container.innerHTML = `<tr><td colspan="5">No medical records found</td></tr>`;
+        return;
+    }
+
+    container.innerHTML = records.map(r => `
+        <tr>
+            <td>${r.patient_name}</td>
+            <td>${r.record_date} ${r.record_time}</td>
+            <td>${r.present_visit || 'N/A'}</td>
+            <td>${r.intervention || 'N/A'}</td>
+            <td>${r.prior_visit || 'N/A'}</td>
+        </tr>
+    `).join('');
+}
+function filterTendRecords() {
+    loadMedicalRecords();
 }
 
 // ========================================
@@ -1042,7 +1086,11 @@ function confirmDelete() {
         formData.append('type', window.deletePatientType);
     }
     
-    const endpoint = deleteType === 'patient' ? 'ajax/patients.php' : 'ajax/appointments.php';
+    if (deleteType === 'appointment') {
+    showAlert('Deleting appointments is disabled.', 'warning');
+    closeDeleteModal();
+    return;
+    }
     
     fetch(endpoint, {
         method: 'POST',
