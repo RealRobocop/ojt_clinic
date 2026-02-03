@@ -206,7 +206,6 @@ document.addEventListener('DOMContentLoaded', function() {
     loadTomorrowAppointments();
     loadPatients();
     loadAppointments();
-    loadRecords();
     
     // Setup form submissions
     setupFormHandlers();
@@ -331,31 +330,45 @@ function populateEmployeeDeptTrackFilter() {
 // ========================================
 // NAVIGATION
 // ========================================
-function navigateTo(section) {
-    // Update active section
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    document.getElementById(section).classList.add('active');
-    
-    // Update active nav item
-    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-    document.querySelector(`[data-section="${section}"]`).classList.add('active');
-    
-    currentSection = section;
-    
-    // Load data for specific sections
-    if (section === 'dashboard') {
+function navigateTo(sectionId) {
+    // Hide all sections
+    document.querySelectorAll('.section').forEach(section => {
+        section.classList.remove('active');
+    });
+
+    // Show selected section
+    const target = document.getElementById(sectionId);
+    if (target) {
+        target.classList.add('active');
+    }
+
+    // Update sidebar active state
+    document.querySelectorAll('.sidebar a').forEach(link => {
+        link.classList.remove('active');
+    });
+
+    const activeLink = document.querySelector(`.sidebar a[data-section="${sectionId}"]`);
+    if (activeLink) {
+        activeLink.classList.add('active');
+    }
+
+    // Track current section
+    currentSection = sectionId;
+
+    // Load data depending on section
+    if (sectionId === 'dashboard') {
         loadTodayAppointments();
         loadTomorrowAppointments();
-    } else if (section === 'patients') {
+    }
+
+    if (sectionId === 'patients') {
         loadPatients();
-    } else if (section === 'appointments') {
+    }
+
+    if (sectionId === 'appointments') {
         loadAppointments();
-    } else if (section === 'records') {
-        loadRecords();
-        loadStatistics();
     }
 }
-
 // ========================================
 // DASHBOARD - TODAY'S & TOMORROW'S APPOINTMENTS
 // ========================================
@@ -369,7 +382,7 @@ function loadTodayAppointments() {
     if (statusFilter) formData.append('status', statusFilter);
     formData.append('sortBy', sortBy);
     
-    fetch('ajax/appointments.php', {
+    fetch('./ajax/appointments.php', {
         method: 'POST',
         body: formData
     })
@@ -390,7 +403,7 @@ function loadTomorrowAppointments() {
     const sortBy = document.getElementById('tomorrowSortBy')?.value || 'time-asc';
     formData.append('sortBy', sortBy);
     
-    fetch('ajax/appointments.php', {
+    fetch('./ajax/appointments.php', {
         method: 'POST',
         body: formData
     })
@@ -478,7 +491,7 @@ function checkInAppointment(id) {
     formData.append('action', 'checkIn');
     formData.append('id', id);
     
-    fetch('ajax/appointments.php', {
+    fetch('./ajax/appointments.php', {
         method: 'POST',
         body: formData
     })
@@ -659,62 +672,6 @@ function updateGradeLevelOptions() {
     courseTrackSelect.required = true;
 }
 
-function editPatient(id, type) {
-    const formData = new FormData();
-    formData.append('action', 'getPatient');
-    formData.append('id', id);
-    formData.append('type', type);
-    
-    fetch('ajax/patients.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const patient = data.patient;
-            document.getElementById('patientModalTitle').textContent = 'Edit Patient';
-            document.getElementById('patientId').value = patient.id;
-            document.getElementById('patientType').value = patient.patient_type;
-            document.getElementById('firstName').value = patient.first_name;
-            document.getElementById('lastName').value = patient.last_name;
-            document.getElementById('patientAge').value = patient.age;
-            document.getElementById('patientGender').value = patient.gender;
-            document.getElementById('patientPhone').value = patient.phone || '';
-            document.getElementById('patientEmail').value = patient.email || '';
-            document.getElementById('patientAddress').value = patient.address || '';
-            
-            togglePatientFields();
-            
-            if (patient.patient_type === 'Student') {
-                document.getElementById('studentId').value = patient.student_id || '';
-                document.getElementById('educationLevel').value = patient.education_level || '';
-                updateGradeLevelOptions();
-                setTimeout(() => {
-                    document.getElementById('gradeLevel').value = patient.grade_level || '';
-                    document.getElementById('courseTrack').value = patient.course_track || '';
-                }, 100);
-            } else if (patient.patient_type === 'Employee') {
-                document.getElementById('employeeId').value = patient.employee_id || '';
-                document.getElementById('employeeType').value = patient.employee_type || '';
-                document.getElementById('department').value = patient.department || '';
-            }
-            
-            document.getElementById('patientModal').classList.add('active');
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
-
-function confirmDeletePatient(id, name, type) {
-    deleteType = 'patient';
-    deleteId = id;
-    window.deletePatientType = type; // Store patient type globally
-    document.getElementById('deleteMessage').textContent = 
-        `Are you sure you want to delete patient "${name}"? This action cannot be undone.`;
-    document.getElementById('deleteModal').classList.add('active');
-}
-
 // ========================================
 // APPOINTMENTS
 // ========================================
@@ -729,7 +686,7 @@ function loadAppointments() {
     formData.append('patientType', typeFilter);
     formData.append('status', statusFilter);
     
-    fetch('ajax/appointments.php', {
+    fetch('./ajax/appointments.php', {
         method: 'POST',
         body: formData
     })
@@ -784,6 +741,7 @@ function openAddAppointmentModal() {
     document.getElementById('appointmentForm').reset();
     document.getElementById('appointmentId').value = '';
     document.getElementById('appointmentModal').classList.add('active');
+    setTimeout(() => updateAppointmentPatientType(), 200);
     loadPatientOptions();
 }
 
@@ -795,27 +753,36 @@ function editAppointment(id) {
     const formData = new FormData();
     formData.append('action', 'getAppointment');
     formData.append('id', id);
-    
-    fetch('ajax/appointments.php', {
+
+    fetch('./ajax/appointments.php', {
         method: 'POST',
         body: formData
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            const apt = data.appointment;
-            document.getElementById('appointmentModalTitle').textContent = 'Edit Appointment';
-            document.getElementById('appointmentId').value = apt.id;
-            document.getElementById('appointmentPatient').value = apt.patient_id;
-            document.getElementById('appointmentPatientType').value = apt.patient_type;
-            document.getElementById('appointmentDate').value = apt.appointment_date;
-            document.getElementById('appointmentTime').value = apt.appointment_time;
-            document.getElementById('appointmentType').value = apt.appointment_type;
-            document.getElementById('appointmentStatus').value = apt.status;
-            document.getElementById('appointmentNotes').value = apt.notes || '';
-            
-            document.getElementById('appointmentModal').classList.add('active');
+        if (!data.success) {
+            alert('Appointment not found');
+            return;
         }
+
+        const apt = data.appointment;
+
+        document.getElementById('appointmentModalTitle').textContent = 'Edit Appointment';
+        document.getElementById('appointmentId').value = apt.id;
+        document.getElementById('appointmentPatientType').value = apt.patient_type;
+
+        // Load patients first, then assign selected patient
+        loadAppointmentPatients(() => {
+            document.getElementById('appointmentPatient').value = apt.patient_id;
+        });
+
+        document.getElementById('appointmentDate').value = apt.appointment_date;
+        document.getElementById('appointmentTime').value = apt.appointment_time;
+        document.getElementById('appointmentType').value = apt.appointment_type;
+        document.getElementById('appointmentStatus').value = apt.status;
+        document.getElementById('appointmentNotes').value = apt.notes || '';
+
+        document.getElementById('appointmentModal').classList.add('active');
     })
     .catch(error => console.error('Error:', error));
 }
@@ -863,8 +830,6 @@ function archiveCompletedAppointments() {
     .then(data => {
         if (data.success) {
             showAlert(`Successfully archived ${data.archived} appointments!`, 'success');
-            loadRecords();
-            loadStatistics();
         } else {
             showAlert(data.message || 'Error archiving appointments', 'danger');
         }
@@ -873,216 +838,6 @@ function archiveCompletedAppointments() {
         console.error('Error:', error);
         showAlert('Error archiving appointments', 'danger');
     });
-}
-
-function loadRecords() {
-    const yearFilter = document.getElementById('recordsYearFilter')?.value || '';
-    const typeFilter = document.getElementById('recordsTypeFilter')?.value || '';
-    
-    const formData = new FormData();
-    formData.append('action', 'getRecords');
-    formData.append('year', yearFilter);
-    formData.append('patientType', typeFilter);
-    
-    fetch('ajax/records.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            renderRecords(data.records);
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
-
-function renderRecords(records) {
-    const tbody = document.getElementById('recordsList');
-    
-    if (!records || records.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No records found</td></tr>';
-        return;
-    }
-    
-    tbody.innerHTML = records.map(record => {
-        let levelInfo = '';
-        if (record.patient_type === 'Student') {
-            levelInfo = `${record.education_level || 'N/A'} - ${record.grade_level || 'N/A'}`;
-        } else {
-            levelInfo = record.employee_type || 'N/A';
-        }
-        
-        return `
-        <tr>
-            <td>${formatDate(record.appointment_date)}</td>
-            <td>${record.patient_name}</td>
-            <td><span class="badge badge-${record.patient_type.toLowerCase()}">${record.patient_type}</span></td>
-            <td>${levelInfo}</td>
-            <td>${record.appointment_type}</td>
-            <td><span class="badge badge-${record.status}">${capitalizeFirst(record.status)}</span></td>
-            <td>${record.notes || 'N/A'}</td>
-        </tr>
-        `;
-    }).join('');
-}
-
-function filterRecords() {
-    loadRecords();
-}
-
-function loadStatistics() {
-    const formData = new FormData();
-    formData.append('action', 'getStatistics');
-    
-    fetch('ajax/records.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            renderStatistics(data.statistics);
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
-
-function renderStatistics(stats) {
-    // Gender Distribution Chart
-    if (stats.gender) {
-        createPieChart('genderChart', 'Gender Distribution', stats.gender, 'genderStats');
-    }
-    
-    // Education Level Chart
-    if (stats.education) {
-        createBarChart('educationChart', 'Appointments by Education Level', stats.education, 'educationStats');
-    }
-    
-    // Employee Type Chart
-    if (stats.employee) {
-        createPieChart('employeeChart', 'Employee Appointments', stats.employee, 'employeeStats');
-    }
-    
-    // Course/Track Chart
-    if (stats.courses) {
-        createBarChart('courseChart', 'Top Courses/Tracks', stats.courses, 'courseStats');
-    }
-}
-
-function createPieChart(canvasId, title, data, statsId) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    
-    // Destroy existing chart if exists
-    if (charts[canvasId]) {
-        charts[canvasId].destroy();
-    }
-    
-    const labels = Object.keys(data);
-    const values = Object.values(data);
-    const total = values.reduce((a, b) => a + b, 0);
-    
-    charts[canvasId] = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: values,
-                backgroundColor: [
-                    '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                },
-                title: {
-                    display: true,
-                    text: title
-                }
-            }
-        }
-    });
-    
-    // Display summary
-    const statsContainer = document.getElementById(statsId);
-    if (statsContainer) {
-        statsContainer.innerHTML = `
-            <p><strong>Total: ${total}</strong></p>
-            ${labels.map((label, i) => `
-                <p>${label}: ${values[i]} (${((values[i]/total)*100).toFixed(1)}%)</p>
-            `).join('')}
-        `;
-    }
-}
-
-function createBarChart(canvasId, title, data, statsId) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    
-    // Destroy existing chart if exists
-    if (charts[canvasId]) {
-        charts[canvasId].destroy();
-    }
-    
-    // Sort and take top 10
-    const sorted = Object.entries(data).sort((a, b) => b[1] - a[1]).slice(0, 10);
-    const labels = sorted.map(item => item[0]);
-    const values = sorted.map(item => item[1]);
-    const total = values.reduce((a, b) => a + b, 0);
-    
-    charts[canvasId] = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Appointments',
-                data: values,
-                backgroundColor: '#d4af37'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                title: {
-                    display: true,
-                    text: title
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    }
-                }
-            }
-        }
-    });
-    
-    // Display summary
-    const statsContainer = document.getElementById(statsId);
-    if (statsContainer) {
-        statsContainer.innerHTML = `
-            <p><strong>Total: ${total}</strong></p>
-            ${labels.slice(0, 5).map((label, i) => `
-                <p>${i+1}. ${label}: ${values[i]}</p>
-            `).join('')}
-        `;
-    }
 }
 
 // ========================================
@@ -1102,7 +857,7 @@ function loadNotifications() {
     const formData = new FormData();
     formData.append('action', 'getNotifications');
     
-    fetch('ajax/appointments.php', {
+    fetch('./ajax/appointments.php', {
         method: 'POST',
         body: formData
     })
@@ -1156,29 +911,21 @@ function goToAppointment(appointmentId) {
 // FORM SUBMISSIONS
 // ========================================
 function setupFormHandlers() {
-    // Patient Form
-    document.getElementById('patientForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        savePatient();
-    });
-    
-    // Appointment Form
-    document.getElementById('appointmentForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        saveAppointment();
-    });
-    
-    // Import Form
-    document.getElementById('importForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        importData();
-    });
-    
-    // Export Form
-    document.getElementById('exportForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        exportData();
-    });
+    const patientForm = document.getElementById('patientForm');
+    if (patientForm) {
+        patientForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            savePatient();
+        });
+    }
+
+    const appointmentForm = document.getElementById('appointmentForm');
+    if (appointmentForm) {
+        appointmentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveAppointment();
+        });
+    }
 }
 
 function savePatient() {
@@ -1215,15 +962,28 @@ function savePatient() {
 }
 
 function saveAppointment() {
-    const formData = new FormData(document.getElementById('appointmentForm'));
+    const form = document.getElementById('appointmentForm');
+
+    // Ensure patient type is updated before submit
+    updateAppointmentPatientType();
+
+    const formData = new FormData(form);
     formData.append('action', document.getElementById('appointmentId').value ? 'updateAppointment' : 'addAppointment');
-    
-    fetch('ajax/appointments.php', {
+
+    // DEBUG LOG — VERY IMPORTANT
+    console.log('Submitting appointment:');
+    for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+    }
+
+    fetch('./ajax/appointments.php', {
         method: 'POST',
         body: formData
     })
     .then(response => response.json())
     .then(data => {
+        console.log('Server response:', data);
+
         if (data.success) {
             showAlert('Appointment saved successfully!', 'success');
             closeAppointmentModal();
@@ -1231,7 +991,7 @@ function saveAppointment() {
             loadTodayAppointments();
             loadTomorrowAppointments();
         } else {
-            showAlert(data.message || 'Error saving appointment', 'danger');
+            showAlert(data.message || 'Missing required fields', 'danger');
         }
     })
     .catch(error => {
@@ -1248,7 +1008,9 @@ function setupDeleteConfirmation() {
     const confirmBtn = document.getElementById('confirmDeleteBtn');
     const errorMsg = document.getElementById('deleteConfirmError');
     
-    confirmInput.addEventListener('input', function() {
+    if (!confirmInput || !confirmBtn || !errorMsg) return;
+
+    confirmInput.addEventListener('input', function()  {
         const value = this.value.trim();
         const correctText = 'First City Providential College';
         
@@ -1317,62 +1079,6 @@ function closeDeleteModal() {
 }
 
 // ========================================
-// IMPORT/EXPORT
-// ========================================
-function importData() {
-    const formData = new FormData(document.getElementById('importForm'));
-    
-    document.getElementById('importProgress').style.display = 'block';
-    document.getElementById('importProgressBar').style.width = '0%';
-    document.getElementById('importStatus').textContent = 'Importing...';
-    
-    fetch('ajax/import.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            document.getElementById('importProgressBar').style.width = '100%';
-            document.getElementById('importStatus').textContent = 
-                `Import completed! ${data.imported} records imported.`;
-            showAlert('Data imported successfully!', 'success');
-            
-            // Reload relevant data
-            loadPatients();
-            loadAppointments();
-            loadPatientOptions();
-            
-            setTimeout(() => {
-                document.getElementById('importForm').reset();
-                document.getElementById('importProgress').style.display = 'none';
-            }, 3000);
-        } else {
-            document.getElementById('importStatus').textContent = 'Import failed: ' + (data.message || 'Unknown error');
-            showAlert(data.message || 'Error importing data', 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        document.getElementById('importStatus').textContent = 'Import failed';
-        showAlert('Error importing data', 'danger');
-    });
-}
-
-function exportData() {
-    const formData = new FormData(document.getElementById('exportForm'));
-    
-    // Create download link
-    const params = new URLSearchParams();
-    for (const [key, value] of formData.entries()) {
-        params.append(key, value);
-    }
-    
-    window.location.href = 'ajax/export.php?' + params.toString();
-    showAlert('Export started! Download will begin shortly.', 'success');
-}
-
-// ========================================
 // UTILITY FUNCTIONS
 // ========================================
 function loadPatientOptions() {
@@ -1405,10 +1111,16 @@ function loadPatientOptions() {
 function updateAppointmentPatientType() {
     const select = document.getElementById('appointmentPatient');
     const selectedOption = select.options[select.selectedIndex];
-    const patientType = selectedOption.getAttribute('data-type');
+
+    if (!selectedOption || !select.value) {
+        document.getElementById('appointmentPatientType').value = '';
+        return;
+    }
+
+    const patientType = selectedOption.dataset.type || selectedOption.getAttribute('data-type');
+
     document.getElementById('appointmentPatientType').value = patientType || '';
 }
-
 function loadYearOptions() {
     const currentYear = new Date().getFullYear();
     const startYear = currentYear - 20;
@@ -1416,8 +1128,6 @@ function loadYearOptions() {
     const yearSelects = [
         'appointmentYearFilter',
         'recordsYearFilter',
-        'exportYearFrom',
-        'exportYearTo'
     ];
     
     yearSelects.forEach(selectId => {

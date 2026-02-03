@@ -252,7 +252,6 @@ function getAppointment($pdo) {
         echo json_encode(['success' => false, 'message' => 'Appointment not found']);
     }
 }
-
 function addAppointment($pdo) {
     $data = [
         ':patient_type' => $_POST['patientType'] ?? 'Student',
@@ -263,26 +262,26 @@ function addAppointment($pdo) {
         ':status' => $_POST['status'] ?? 'pending',
         ':notes' => $_POST['notes'] ?? null
     ];
-    
+
+    if (!$data[':patient_id'] || !$data[':appointment_date'] || !$data[':appointment_time']) {
+        echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+        return;
+    }
+
     $sql = "INSERT INTO appointments (
         patient_type, patient_id, appointment_date, appointment_time, appointment_type, status, notes
     ) VALUES (
         :patient_type, :patient_id, :appointment_date, :appointment_time, :appointment_type, :status, :notes
     )";
-    
+
     $stmt = $pdo->prepare($sql);
     $result = $stmt->execute($data);
-    
-    if ($result) {
-        echo json_encode(['success' => true, 'id' => $pdo->lastInsertId()]);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to add appointment']);
-    }
-}
 
+    echo json_encode(['success' => $result]);
+}
 function updateAppointment($pdo) {
     $id = $_POST['appointmentId'] ?? 0;
-    
+
     $data = [
         ':id' => $id,
         ':patient_type' => $_POST['patientType'] ?? 'Student',
@@ -293,7 +292,7 @@ function updateAppointment($pdo) {
         ':status' => $_POST['status'] ?? 'pending',
         ':notes' => $_POST['notes'] ?? null
     ];
-    
+
     $sql = "UPDATE appointments SET
         patient_type = :patient_type,
         patient_id = :patient_id,
@@ -303,17 +302,12 @@ function updateAppointment($pdo) {
         status = :status,
         notes = :notes
     WHERE id = :id AND is_deleted = 0";
-    
+
     $stmt = $pdo->prepare($sql);
     $result = $stmt->execute($data);
-    
-    if ($result) {
-        echo json_encode(['success' => true]);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to update appointment']);
-    }
-}
 
+    echo json_encode(['success' => $result]);
+}
 function deleteAppointment($pdo) {
     $id = $_POST['id'] ?? 0;
     
