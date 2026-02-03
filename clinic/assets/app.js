@@ -679,26 +679,29 @@ function loadAppointments() {
     const yearFilter = document.getElementById('appointmentYearFilter')?.value || '';
     const typeFilter = document.getElementById('appointmentTypeFilter')?.value || '';
     const statusFilter = document.getElementById('appointmentStatusFilter')?.value || '';
-    
+
     const formData = new FormData();
     formData.append('action', 'getAppointments');
     formData.append('year', yearFilter);
     formData.append('patientType', typeFilter);
     formData.append('status', statusFilter);
-    
+
     fetch('./ajax/appointments.php', {
         method: 'POST',
         body: formData
     })
     .then(response => response.json())
     .then(data => {
+        console.log('Appointments loaded:', data); // Debug log
+        
         if (data.success) {
             renderAppointments(data.appointments);
+        } else {
+            console.error('Load failed:', data.message);
         }
     })
     .catch(error => console.error('Error:', error));
 }
-
 function renderAppointments(appointments) {
     const container = document.getElementById('appointmentsList');
     

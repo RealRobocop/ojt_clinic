@@ -71,7 +71,7 @@ function getTodayAppointments($pdo) {
                     CONCAT(s.first_name, ' ', s.last_name) as patient_name,
                     'Student' as patient_type
             FROM appointments a
-            JOIN students s ON a.patient_id = s.id AND a.patient_type = 'Student'
+            JOIN students s ON a.patient_id = s.Student_id AND a.patient_type = 'Student'
             WHERE a.appointment_date = :today AND a.is_deleted = 0 AND a.status != 'completed'";
     
     // Get employee appointments
@@ -79,7 +79,7 @@ function getTodayAppointments($pdo) {
                     CONCAT(e.first_name, ' ', e.last_name) as patient_name,
                     'Employee' as patient_type
             FROM appointments a
-            JOIN employees e ON a.patient_id = e.id AND a.patient_type = 'Employee'
+            JOIN employees e ON a.patient_id = e.employee_id AND a.patient_type = 'Employee'
             WHERE a.appointment_date = :today AND a.is_deleted = 0 AND a.status != 'completed'";
     
     $params = [':today' => $today];
@@ -142,14 +142,14 @@ function getTomorrowAppointments($pdo) {
     $sqlStudent = "SELECT a.*, 
                     CONCAT(s.first_name, ' ', s.last_name) as patient_name
             FROM appointments a
-            JOIN students s ON a.patient_id = s.id AND a.patient_type = 'Student'
+            JOIN students s ON a.patient_id = s.Student_id AND a.patient_type = 'Student'
             WHERE a.appointment_date = :tomorrow AND a.is_deleted = 0";
     
     // Get employee appointments
     $sqlEmployee = "SELECT a.*, 
                     CONCAT(e.first_name, ' ', e.last_name) as patient_name
             FROM appointments a
-            JOIN employees e ON a.patient_id = e.id AND a.patient_type = 'Employee'
+            JOIN employees e ON a.patient_id = e.employee_id AND a.patient_type = 'Employee'
             WHERE a.appointment_date = :tomorrow AND a.is_deleted = 0";
     
     $params = [':tomorrow' => $tomorrow];
@@ -210,7 +210,7 @@ function getAppointments($pdo) {
                     CONCAT(s.first_name, ' ', s.last_name) as patient_name,
                     'Student' as patient_type
             FROM appointments a
-            JOIN students s ON a.patient_id = s.id AND a.patient_type = 'Student'
+            JOIN students s ON a.patient_id = s.Student_id AND a.patient_type = 'Student'
             WHERE $whereClause";
     
     // Get employee appointments  
@@ -218,7 +218,7 @@ function getAppointments($pdo) {
                     CONCAT(e.first_name, ' ', e.last_name) as patient_name,
                     'Employee' as patient_type
             FROM appointments a
-            JOIN employees e ON a.patient_id = e.id AND a.patient_type = 'Employee'
+            JOIN employees e ON a.patient_id = e.employee_id AND a.patient_type = 'Employee'
             WHERE $whereClause";
     
     // Filter by patient type if specified
@@ -339,13 +339,13 @@ function getNotifications($pdo) {
     // Get students appointments
     $sqlStudent = "SELECT a.*, CONCAT(s.first_name, ' ', s.last_name) as patient_name
             FROM appointments a
-            JOIN students s ON a.patient_id = s.id AND a.patient_type = 'Student'
+            JOIN students s ON a.patient_id = s.Student_id AND a.patient_type = 'Student'
             WHERE a.status = 'pending' AND a.is_deleted = 0";
     
     // Get employee appointments  
     $sqlEmployee = "SELECT a.*, CONCAT(e.first_name, ' ', e.last_name) as patient_name
             FROM appointments a
-            JOIN employees e ON a.patient_id = e.id AND a.patient_type = 'Employee'
+            JOIN employees e ON a.patient_id = e.employee_id AND a.patient_type = 'Employee'
             WHERE a.status = 'pending' AND a.is_deleted = 0";
     
     $sql = "($sqlStudent) UNION ($sqlEmployee) 
